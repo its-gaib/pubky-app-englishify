@@ -11,6 +11,7 @@ import { cn } from '@/libs/utils/utils';
 import { parseCompositeId } from '@/models/models.utils';
 import type { PostDetailsModel } from '@/models/post/details/postDetails';
 import { PostText } from '@/molecules/PostText/PostText';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import { useHomeStore } from '@/stores/home/home.store';
 import { LAYOUT } from '@/stores/home/home.types';
@@ -118,6 +119,7 @@ export const PostArticleDetail = ({ postId, content, attachments, isBlurred }: P
         articleImages={{ attachments: attachments ?? [], authorId: articleAuthorId, postId }}
         onLinkClick={handleLinkClick}
       />
+      <PostTranslation content={`${title}\n\n${body}`} />
     </>
   );
 

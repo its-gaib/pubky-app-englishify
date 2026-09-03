@@ -2,6 +2,18 @@
 
 # Pubky web app
 
+## Englishify vibe
+
+This fork adds an on-demand **Translate to English** action to non-English post
+text. Language assessment runs locally in the browser with bounded script and
+word heuristics, so simply viewing a feed never calls an AI service.
+
+Translation is requested only after a click and uses OVHcloud's anonymous
+Llama 3.3 endpoint directly from the browser. No account or API key is needed.
+The selected post text and the visitor's IP address necessarily reach OVHcloud;
+Pubky does not proxy or persist the translation. Model output is displayed as
+plain text, never as links or executable Markdown.
+
 ## Prerequisites
 
 - Node.js (see [.nvmrc](./.nvmrc) for the recommended version)

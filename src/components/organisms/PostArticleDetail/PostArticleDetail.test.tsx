@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ElementType, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePostArticle } from '@/hooks/usePostArticle/usePostArticle';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { useHomeStore } from '@/stores/home/home.store';
 import { LAYOUT } from '@/stores/home/home.types';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
@@ -61,6 +62,10 @@ vi.mock('@/molecules/PostText/PostText', () => ({
       {content}
     </div>
   ),
+}));
+
+vi.mock('@/molecules/PostTranslation/PostTranslation', () => ({
+  PostTranslation: vi.fn(() => null),
 }));
 
 vi.mock('../DialogCheckLink/DialogCheckLink', () => ({
@@ -174,6 +179,7 @@ vi.mock('../PostInlineTagsActions/PostInlineTagsActions', () => ({
 
 const mockUsePostArticle = vi.mocked(usePostArticle);
 const mockUseLocalFilesStore = vi.mocked(useLocalFilesStore);
+const mockPostTranslation = vi.mocked(PostTranslation);
 
 describe('PostArticleDetail', () => {
   const defaultProps = {
@@ -257,6 +263,17 @@ describe('PostArticleDetail', () => {
 
     expect(screen.getByTestId('post-text')).toHaveTextContent('Test article body content');
     expect(screen.getByTestId('post-text')).toHaveAttribute('data-is-article', 'true');
+    expect(mockPostTranslation).toHaveBeenCalledWith(
+      { content: 'Test Article Title\n\nTest article body content' },
+      undefined,
+    );
+  });
+
+  it('does not expose blurred article content to translation', () => {
+    render(<PostArticleDetail {...defaultProps} isBlurred />);
+
+    expect(screen.getByTestId('post-content-blurred')).toBeInTheDocument();
+    expect(mockPostTranslation).not.toHaveBeenCalled();
   });
 
   it('renders dialogs in closed state initially', () => {

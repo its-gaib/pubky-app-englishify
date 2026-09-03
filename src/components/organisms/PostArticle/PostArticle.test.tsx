@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import type { AttachmentConstructed } from '../PostAttachments/PostAttachments.types';
 import { PostArticle } from './PostArticle';
@@ -88,6 +89,12 @@ vi.mock('@/molecules/PostText/PostText', () => {
   };
 });
 
+vi.mock('@/molecules/PostTranslation/PostTranslation', () => ({
+  PostTranslation: vi.fn(() => null),
+}));
+
+const mockPostTranslation = vi.mocked(PostTranslation);
+
 // Mock organisms
 vi.mock('@/organisms/DialogCheckLink/DialogCheckLink', () => {
   return {
@@ -162,6 +169,10 @@ describe('PostArticle', () => {
       expect(screen.getByText('Test Article Title')).toBeInTheDocument();
       expect(screen.getByTestId('post-text')).toBeInTheDocument();
       expect(screen.getByText('This is the article body content.')).toBeInTheDocument();
+      expect(mockPostTranslation).toHaveBeenCalledWith(
+        { content: 'Test Article Title\n\nThis is the article body content.', variant: 'compact' },
+        undefined,
+      );
     });
 
     it('renders cover image when available', () => {

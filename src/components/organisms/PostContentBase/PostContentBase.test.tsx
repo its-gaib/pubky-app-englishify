@@ -5,6 +5,7 @@ import type { EnrichedPostDetails } from '@/application/moderation/moderation.ty
 import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { PostLinkEmbeds } from '@/molecules/PostLinkEmbeds/PostLinkEmbeds';
 import { PostText } from '@/molecules/PostText/PostText';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
 import { asOpaque } from '@/test-utils/type-assertions';
 import { PostArticle } from '../PostArticle/PostArticle';
@@ -77,6 +78,10 @@ vi.mock('@/molecules/PostText/PostText', () => {
   };
 });
 
+vi.mock('@/molecules/PostTranslation/PostTranslation', () => ({
+  PostTranslation: vi.fn(() => null),
+}));
+
 vi.mock('../PostArticle/PostArticle', () => ({
   PostArticle: vi.fn(({ content }: { content: string }) => <div data-testid="post-article">{content}</div>),
 }));
@@ -114,6 +119,7 @@ const mockPostAttachments = vi.mocked(PostAttachments);
 const mockPostContentBlurred = vi.mocked(PostContentBlurred);
 const mockPostArticle = vi.mocked(PostArticle);
 const mockPostText = vi.mocked(PostText);
+const mockPostTranslation = vi.mocked(PostTranslation);
 
 // Helper to create complete PostDetails mock
 const createMockPostDetails = (
@@ -149,6 +155,18 @@ describe('PostContentBase', () => {
     render(<PostContentBase postId="post-123" />);
 
     expect(screen.getByTestId('container')).toBeInTheDocument();
+    expect(mockPostTranslation).toHaveBeenCalledWith({ content: 'Mock content' }, undefined);
+  });
+
+  it('does not mount translation for an attachment-only post', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: createMockPostDetails({ content: '', attachments: ['file-id-1'] }),
+      isLoading: false,
+    });
+
+    render(<PostContentBase postId="post-123" />);
+
+    expect(mockPostTranslation).not.toHaveBeenCalled();
   });
 
   it('calls PostAttachments with attachments from postDetails', () => {
@@ -230,6 +248,7 @@ describe('PostContentBase', () => {
     expect(screen.getByTestId('post-content-blurred')).toBeInTheDocument();
     expect(mockPostContentBlurred).toHaveBeenCalledWith({ postId: 'post-123', className: 'custom-class' }, undefined);
     expect(mockPostAttachments).not.toHaveBeenCalled();
+    expect(mockPostTranslation).not.toHaveBeenCalled();
   });
 
   it('renders normal content when is_blurred is false', () => {
@@ -242,6 +261,18 @@ describe('PostContentBase', () => {
 
     expect(screen.queryByTestId('post-content-blurred')).not.toBeInTheDocument();
     expect(screen.getByTestId('container')).toBeInTheDocument();
+  });
+
+  it('does not mount translation for a deleted post', () => {
+    mockUsePostDetails.mockReturnValue({
+      postDetails: createMockPostDetails({ content: '[DELETED]' }),
+      isLoading: false,
+    });
+
+    render(<PostContentBase postId="post-123" />);
+
+    expect(screen.getByTestId('post-unavailable')).toBeInTheDocument();
+    expect(mockPostTranslation).not.toHaveBeenCalled();
   });
 
   it('renders PostArticle when kind is long', () => {
@@ -347,6 +378,7 @@ describe('PostContentBase', () => {
     expect(card).toHaveAttribute('data-presentation', 'embed');
     expect(screen.queryByTestId('container')).not.toBeInTheDocument();
     expect(screen.queryByTestId('post-article')).not.toBeInTheDocument();
+    expect(mockPostTranslation).not.toHaveBeenCalled();
   });
 
   it('prioritizes is_blurred over kind for blurred articles', () => {

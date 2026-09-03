@@ -17,6 +17,7 @@ import { cn, formatPublicKey, isPostDeleted } from '@/libs/utils/utils';
 import { PostHeaderTimestamp } from '@/molecules/PostHeaderTimestamp/PostHeaderTimestamp';
 import { PostListMediaThumbnail } from '@/molecules/PostListMediaThumbnail/PostListMediaThumbnail';
 import { truncateAtWordBoundary } from '@/molecules/PostText/PostText.utils';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { PostUnavailable } from '@/molecules/PostUnavailable/PostUnavailable';
 import { UserInfoPopover } from '@/molecules/UserInfoPopover/UserInfoPopover';
 import { AvatarWithFallback } from '@/organisms/AvatarWithFallback/AvatarWithFallback';
@@ -185,6 +186,10 @@ export function PostMainListRow({
               </Typography>
               <PostHeaderTimestamp timeAgo={timeAgo} indexedAt={indexedAt} />
             </Container>
+          ) : null}
+
+          {!showFullContent && !shouldShowCompactBlur && snippet ? (
+            <PostTranslation content={snippet} variant="compact" className="mt-1" />
           ) : null}
         </Container>
 

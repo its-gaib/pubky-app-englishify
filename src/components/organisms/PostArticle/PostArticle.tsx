@@ -9,6 +9,7 @@ import { usePostArticle } from '@/hooks/usePostArticle/usePostArticle';
 import { cn } from '@/libs/utils/utils';
 import type { PostDetailsModel } from '@/models/post/details/postDetails';
 import { PostText } from '@/molecules/PostText/PostText';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { FileVariant } from '@/services/nexus/file/file.types';
 import { DialogCheckLink } from '../DialogCheckLink/DialogCheckLink';
 import type { AttachmentConstructed } from '../PostAttachments/PostAttachments.types';
@@ -50,6 +51,7 @@ export const PostArticle = ({ content, attachments, localAttachments, className 
           </Container>
 
           <PostText content={body} isArticle onLinkClick={handleLinkClick} className="line-clamp-3" />
+          <PostTranslation content={`${title}\n\n${body}`} variant="compact" />
         </Container>
 
         {finalCoverImage && (

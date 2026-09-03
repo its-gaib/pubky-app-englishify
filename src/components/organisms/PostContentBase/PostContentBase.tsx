@@ -6,6 +6,7 @@ import { cn, isPostDeleted } from '@/libs/utils/utils';
 import { parseCompositeId } from '@/models/models.utils';
 import { PostLinkEmbeds } from '@/molecules/PostLinkEmbeds/PostLinkEmbeds';
 import { PostText } from '@/molecules/PostText/PostText';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { PostUnavailable } from '@/molecules/PostUnavailable/PostUnavailable';
 import { CollectionCard } from '@/organisms/Collections/CollectionCard/CollectionCard';
 import { useLocalFilesStore } from '@/stores/localFiles/localFiles.store';
@@ -65,7 +66,12 @@ export function PostContentBase({ postId, className, textClassName, mediaVariant
   return (
     <Container className={cn('min-w-0 gap-3', className)}>
       {/* Post text */}
-      {hasContent && <PostText content={postDetails.content} className={textClassName} />}
+      {hasContent && (
+        <>
+          <PostText content={postDetails.content} className={textClassName} />
+          <PostTranslation content={postDetails.content} />
+        </>
+      )}
 
       {/* Link previews from text */}
       {hasContent && <PostLinkEmbeds content={postDetails.content} />}

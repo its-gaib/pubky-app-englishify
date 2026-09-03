@@ -1,0 +1,11 @@
+.git
+.next
+node_modules
+coverage
+cypress
+docs
+**/*.test.*
+**/*.vrt.test.*
+**/__snapshots__
+src/test
+src/test-utils

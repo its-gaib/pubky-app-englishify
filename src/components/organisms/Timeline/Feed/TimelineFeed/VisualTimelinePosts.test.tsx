@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import type { VisualPlaceholderKind, VisualRow, VisualTile } from './TimelineFeedVisual.types';
 import { VisualTimelinePosts } from './VisualTimelinePosts';
 
@@ -118,6 +119,12 @@ vi.mock('@/molecules/PostText/PostText', () => {
     PostText: ({ content }: { content: string }) => <div data-testid="visual-overlay-text">{content}</div>,
   };
 });
+
+vi.mock('@/molecules/PostTranslation/PostTranslation', () => ({
+  PostTranslation: vi.fn(() => null),
+}));
+
+const mockPostTranslation = vi.mocked(PostTranslation);
 
 vi.mock('@/molecules/PostText/PostText.utils', () => {
   return {
@@ -328,6 +335,24 @@ describe('VisualTimelinePosts', () => {
 
     expect(mockNavigateToPost).not.toHaveBeenCalled();
     expect(screen.getByTestId('reply-dialog')).toBeInTheDocument();
+  });
+
+  it('wires visible overlay prose into the compact translation control', () => {
+    render(
+      <VisualTimelinePosts
+        postIds={['author:post1']}
+        loading={false}
+        loadingMore={false}
+        error={null}
+        hasMore={false}
+        loadMore={vi.fn()}
+      />,
+    );
+
+    expect(mockPostTranslation).toHaveBeenCalledWith(
+      { content: 'Hello world', variant: 'visual', className: 'mt-2' },
+      undefined,
+    );
   });
 
   it('skips the hover overlay on touch devices', () => {

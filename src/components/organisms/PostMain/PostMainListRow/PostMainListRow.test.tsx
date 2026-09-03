@@ -6,6 +6,7 @@ import { usePostDetails } from '@/hooks/usePostDetails/usePostDetails';
 import { useRelativeTime } from '@/hooks/useRelativeTime/useRelativeTime';
 import { useRepostInfo } from '@/hooks/useRepostInfo/useRepostInfo';
 import { useUserDetails } from '@/hooks/useUserDetails/useUserDetails';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { useAuthStore } from '@/stores/auth/auth.store';
 import type { AuthStore } from '@/stores/auth/auth.types';
 import { PostMainListRow } from './PostMainListRow';
@@ -106,6 +107,12 @@ vi.mock('@/molecules/PostListMediaThumbnail/PostListMediaThumbnail', () => ({
     <div data-testid="post-list-media-thumbnail" data-post-id={postId} />
   ),
 }));
+
+vi.mock('@/molecules/PostTranslation/PostTranslation', () => ({
+  PostTranslation: vi.fn(() => null),
+}));
+
+const mockPostTranslation = vi.mocked(PostTranslation);
 
 vi.mock('@/molecules/UserInfoPopover/UserInfoPopover', () => ({
   UserInfoPopover: ({
@@ -268,6 +275,10 @@ describe('PostMainListRow', () => {
       'data-avatar-url',
       'https://example.com/avatar.png',
     );
+    expect(mockPostTranslation).toHaveBeenCalledWith(
+      { content: 'Some post content', variant: 'compact', className: 'mt-1' },
+      undefined,
+    );
   });
 
   it('links own-user headers to the static profile route', () => {
@@ -333,6 +344,7 @@ describe('PostMainListRow', () => {
   });
 
   it('replaces blurred compact content and its media thumbnail with the moderation affordance', () => {
+    mockPostTranslation.mockClear();
     mockPostDetails('Sensitive post content');
     vi.mocked(usePostDetails).mockImplementation((postId) => ({
       postDetails:
@@ -356,6 +368,7 @@ describe('PostMainListRow', () => {
     expect(screen.getByTestId('post-content-blurred')).toHaveAttribute('data-post-id', 'author:post');
     expect(screen.getByTestId('post-content-blurred')).toHaveAttribute('data-variant', 'compact');
     expect(screen.queryByTestId('post-list-media-thumbnail')).not.toBeInTheDocument();
+    expect(mockPostTranslation).not.toHaveBeenCalled();
   });
 
   it('renders collection name instead of raw collection JSON in compact rows', () => {

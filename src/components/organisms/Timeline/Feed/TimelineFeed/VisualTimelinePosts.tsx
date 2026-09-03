@@ -22,6 +22,7 @@ import { PostHeaderTimestamp } from '@/molecules/PostHeaderTimestamp/PostHeaderT
 import { PostHeaderUserInfo } from '@/molecules/PostHeaderUserInfo/PostHeaderUserInfo';
 import { PostText } from '@/molecules/PostText/PostText';
 import { truncateAtWordBoundary } from '@/molecules/PostText/PostText.utils';
+import { PostTranslation } from '@/molecules/PostTranslation/PostTranslation';
 import { PostUnavailable } from '@/molecules/PostUnavailable/PostUnavailable';
 import { TimelineEndMessage } from '@/molecules/Timeline/TimelineEndMessage';
 import { TimelineError } from '@/molecules/Timeline/TimelineError';
@@ -181,15 +182,21 @@ function VisualTimelineTileOverlay({ tile, size, onReplyClick, onRepostClick }: 
           </Container>
 
           {truncatedContent ? (
-            <Container overrideDefaults className={cn('overflow-hidden', isCompact ? 'max-h-[84px]' : 'max-h-[96px]')}>
-              <PostText
-                content={truncatedContent}
-                className={cn(
-                  'text-white [&_*]:text-white [&_blockquote]:border-white/30 [&_button]:text-white [&_button]:hover:text-white/80',
-                  isCompact ? 'text-sm leading-5' : 'text-base leading-6',
-                )}
-              />
-            </Container>
+            <>
+              <Container
+                overrideDefaults
+                className={cn('overflow-hidden', isCompact ? 'max-h-[84px]' : 'max-h-[96px]')}
+              >
+                <PostText
+                  content={truncatedContent}
+                  className={cn(
+                    'text-white [&_*]:text-white [&_blockquote]:border-white/30 [&_button]:text-white [&_button]:hover:text-white/80',
+                    isCompact ? 'text-sm leading-5' : 'text-base leading-6',
+                  )}
+                />
+              </Container>
+              <PostTranslation content={truncatedContent} variant="visual" className="mt-2" />
+            </>
           ) : null}
         </Container>
       </Container>
