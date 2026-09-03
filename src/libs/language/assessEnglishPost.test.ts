@@ -65,6 +65,47 @@ describe('assessEnglishPost', () => {
     },
   );
 
+  it.each([
+    'https://youtu.be/NZpobX6MQVA',
+    'https://youtu.be/NZpobX6MQVA?t=90',
+    'youtu.be/NZpobX6MQVA',
+    '[NZpobX6MQVA](https://youtu.be/NZpobX6MQVA)',
+    'NZpobX6MQVA',
+    'alice@example.com',
+    'example.com/some/path',
+    '/usr/local/bin/node',
+    '#bitcoin #nostr #pubky #web5',
+    '550e8400-e29b-41d4-a716-446655440000',
+    'BTC/USD 63420.50',
+    'npm install typescript',
+    '{"endpoint":"development"}',
+  ])('does not offer translation for structured non-language content: %s', (content) => {
+    expect(assessEnglishPost(content)).toEqual({
+      classification: 'unknown',
+      isMeaningful: false,
+      shouldOfferTranslation: false,
+    });
+  });
+
+  it.each(['Gaur eguraldi ederra izango dugu', 'Astăzi mergem împreună la munte', 'Habari za asubuhi rafiki yangu'])(
+    'still offers translation for unrecognized natural-language prose: %s',
+    (content) => {
+      expect(assessEnglishPost(content)).toEqual({
+        classification: 'unknown',
+        isMeaningful: true,
+        shouldOfferTranslation: true,
+      });
+    },
+  );
+
+  it('ignores a link while assessing real prose around it', () => {
+    expect(assessEnglishPost('Gaur eguraldi ederra izango dugu https://youtu.be/NZpobX6MQVA')).toEqual({
+      classification: 'unknown',
+      isMeaningful: true,
+      shouldOfferTranslation: true,
+    });
+  });
+
   it('does not treat a source-code snippet as prose', () => {
     expect(assessEnglishPost('const frobnicator = quux;')).toEqual({
       classification: 'unknown',

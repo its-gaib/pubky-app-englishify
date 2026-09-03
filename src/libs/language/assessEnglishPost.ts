@@ -185,6 +185,72 @@ const DISTINCTIVE_FOREIGN_MARKERS = new Set([
 
 const CODE_KEYWORD = /\b(?:async|await|class|const|def|export|fn|function|import|interface|let|return|var)\b/i;
 const CODE_PUNCTUATION = /[{};]|=>|===?|!==?|\+\+|--/;
+const URI_SCHEME_TOKEN = /^[a-z][a-z\d+.-]*:(?:\/\/)?\S+$/iu;
+const EMAIL_TOKEN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
+const BARE_DOMAIN_TOKEN = /^(?:[\p{L}\p{N}-]+\.)+[\p{L}]{2,63}(?::\d{1,5})?(?:[/?#]\S*)?$/iu;
+const COMPACT_IDENTIFIER_TOKEN = /^[\p{L}\p{N}_-]+$/u;
+const LONG_HEXADECIMAL_TOKEN = /^(?:0x)?[\da-f]{8,}$/iu;
+const NATURAL_WORD_TOKEN = /^\p{L}+(?:['’]\p{L}+)*$/u;
+
+function unwrapToken(token: string): string {
+  return token.replace(/^[\p{Ps}\p{Pi}"']+/gu, '').replace(/[\p{Pe}\p{Pf}"',.;!?…]+$/gu, '');
+}
+
+/** True for a single whitespace-delimited value whose structure is data rather than prose. */
+function isStructuredNonLanguageToken(token: string): boolean {
+  const candidate = unwrapToken(token);
+  if (!candidate) return false;
+
+  if (URI_SCHEME_TOKEN.test(candidate) || EMAIL_TOKEN.test(candidate) || BARE_DOMAIN_TOKEN.test(candidate)) {
+    return true;
+  }
+
+  // Paths, trading pairs, encoded payloads and similar slash-delimited values
+  // are not natural-language words. Removing one from surrounding prose is safe.
+  if (candidate.includes('/') || candidate.includes('\\')) return true;
+  if (candidate.includes('_')) return true;
+  if (LONG_HEXADECIMAL_TOKEN.test(candidate)) return true;
+
+  // IDs such as a YouTube video ID are otherwise split at their digits into
+  // several apparent words by the Unicode letter tokenizer below.
+  if (
+    candidate.length >= 6 &&
+    COMPACT_IDENTIFIER_TOKEN.test(candidate) &&
+    /\p{L}/u.test(candidate) &&
+    /\p{N}/u.test(candidate)
+  ) {
+    return true;
+  }
+
+  return (candidate.match(/[.:=+~-]/gu) ?? []).length >= 2;
+}
+
+function looksLikeStructuredData(text: string): boolean {
+  const trimmed = text.trim();
+  const hasContainer =
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'));
+  if (!hasContainer) return false;
+
+  try {
+    const value: unknown = JSON.parse(trimmed);
+    return typeof value === 'object' && value !== null;
+  } catch {
+    return false;
+  }
+}
+
+function countNaturalWordTokens(text: string): number {
+  return text.split(/\s+/u).reduce((total, token) => {
+    const candidate = unwrapToken(token);
+    if (!NATURAL_WORD_TOKEN.test(candidate)) return total;
+
+    // Acronym runs and camelCase identifiers are weak evidence of prose. Known
+    // language markers are handled before this conservative fallback.
+    if (/^\p{Lu}{2,}$/u.test(candidate) || /\p{Ll}.*\p{Lu}/u.test(candidate)) return total;
+
+    return total + 1;
+  }, 0);
+}
 
 type AssessmentBasis = Pick<EnglishPostAssessment, 'classification' | 'isMeaningful'>;
 
@@ -214,9 +280,11 @@ function stripPostNoise(content: string): string {
     .replace(/\b(?:https?:\/\/|www\.)[^\s<>()]+/giu, ' ')
     .replace(/\b(?:pk:|pubky:)[^\s]+/giu, ' ')
     .replace(/\B@[\p{L}\p{N}_-]+/gu, ' ')
+    .replace(/(?<![\p{L}\p{N}_])[$#][\p{L}\p{N}_-]+/gu, ' ')
     .replace(/<[^>\n]{1,200}>/g, ' ')
     .replace(/&(?:[a-z]+|#\d+|#x[\da-f]+);/giu, ' ')
-    .replace(/[#>*_~|]/g, ' ');
+    .replace(/[#>*_~|]/g, ' ')
+    .replace(/\S+/gu, (token) => (isStructuredNonLanguageToken(token) ? ' ' : token));
 }
 
 /**
@@ -231,6 +299,8 @@ export function assessEnglishPost(content: string): EnglishPostAssessment {
 
   const text = stripPostNoise(content);
   if (!text.trim()) return assessment('unknown', false);
+
+  if (looksLikeStructuredData(text)) return assessment('unknown', false);
 
   // Raw source-shaped snippets should not acquire a translate affordance merely
   // because their identifiers are not in the small English marker list.
@@ -280,11 +350,12 @@ export function assessEnglishPost(content: string): EnglishPostAssessment {
   const visibleCharacterCount = Array.from(text).filter((character) => !/\s/u.test(character)).length;
   const letterRatio = visibleCharacterCount === 0 ? 0 : letterCount / visibleCharacterCount;
   const allTitleCaseNames = tokens.length >= 2 && tokens.every((token) => /^\p{Lu}[\p{Ll}\p{M}]+$/u.test(token));
+  const naturalWordCount = countNaturalWordTokens(text);
+  // With no recognized marker, favor precision: multiple whitespace-delimited
+  // words are required so IDs, commands and other structured fragments do not
+  // become "prose" merely because they contain enough letters.
   const looksLikeLatinProse =
-    !allTitleCaseNames &&
-    letterRatio >= 0.25 &&
-    lexicalLetterCount >= 8 &&
-    (tokens.length >= 2 || /[.!?…]/u.test(text));
+    !allTitleCaseNames && letterRatio >= 0.5 && lexicalLetterCount >= 16 && naturalWordCount >= 4;
 
   return assessment('unknown', looksLikeLatinProse);
 }
