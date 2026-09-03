@@ -8,4 +8,3 @@ docs
 **/*.vrt.test.*
 **/__snapshots__
 src/test
-src/test-utils
